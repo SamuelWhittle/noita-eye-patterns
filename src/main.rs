@@ -8,6 +8,8 @@ struct Args {
     path: String,
 }
 
+struct Iris {x: i32, y: i32, dir: String}
+
 fn main() {
     // get the command line args
     let args = Args::parse();
@@ -20,6 +22,9 @@ fn main() {
         Ok(data) => data.to_rgba8(),
         Err(error) => panic!("Problem opening path: {}. \nError: {:?}", args.path, error)
     };
+
+    let message_columns = 26;
+    let mut trigrams = vec![];
 
     // we will search the image for pixels that form the iris/pupil of the eyes
     // the iris/pupil in this case is a plus shape of black pixels
@@ -57,9 +62,30 @@ fn main() {
             let pupil_x = pixel.0 + 1;
             let pupil_y = pixel.1 + 1;
 
-            // calc trigram indices
-            let trigram_x = ((pupil_x - 3) as f64 / 18f64).floor();
-            let trigram_y = (pupil_y as f64 / 14f64).floor();
+            // calc trigram indices unrounded 
+            let trigram_x_unrounded = (pupil_x - 3) as f64 / 18f64;
+            let trigram_y_unrounded = pupil_y as f64 / 14f64;
+            // use unrounded trigram indices to get ratios of how far into the trigram's width and
+            // length the pupil is
+            let pupil_x_ratio = trigram_x_unrounded % 1f64;
+            let pupil_y_ratio = trigram_y_unrounded % 1f64;
+            // calculate trigram indices
+            let trigram_x = trigram_x_unrounded.floor() as usize;
+            let trigram_y = trigram_y_unrounded.floor() as usize;
+            
+            // if there is no vector for the row we are on, make one
+            if trigrams.get(trigram_y).is_none() {
+                trigrams.push(vec![])
+            }
+
+            // if there is no trigram tuple in the row and column slot we are on, make one
+            if trigrams[trigram_y].get(trigram_x).is_none() {
+                trigrams[trigram_y].push((Iris{x: 0, y: 0, dir: String::from("")}, Iris{x: 0, y: 0, dir: String::from("")}, Iris{x: 0, y: 0, dir: String::from("")}));
+            }
+
+            println!("{:?}", pupil_x_ratio);
+
+            
 
             // check for pupil direction
             let mut direction = "c";
@@ -74,7 +100,7 @@ fn main() {
             }
 
             // print that shit
-            println!("{},{} {},{} {}", trigram_x, trigram_y, pixel.0 + 1, pixel.1 + 1, direction);
+            //println!("{},{} {},{} {}", trigram_x, trigram_y, pixel.0 + 1, pixel.1 + 1, direction);
         }
     }
 
