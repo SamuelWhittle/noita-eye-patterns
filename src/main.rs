@@ -121,35 +121,32 @@ fn main() {
         let pupil_message_x = pupil.0 - message_x_offset - 3;
         let pupil_message_y = pupil.1 - message_y_offset;
 
-        // trigrams have a tileable size of 18 by 14 pixels, we divide our message specific coords
-        // by these numbers to get trigram indices that are left unrounded.
+        // trigrams have a tileable size of 18 by 14 pixels, we divide our pixel X coord
+        // by 18 to get an unrounded trigram X coord.
         let trigram_x_unrounded = pupil_message_x as f64 / 18f64;
-        let trigram_y_unrounded = pupil_message_y as f64 / 14f64;
 
-        // use unrounded trigram indices to get ratios of how far into the trigram's width and
-        // height the pupil is
+        // use unrounded trigram X coord to get ratios of how far into the trigram's width
+        // the pupil is
         let pupil_x_ratio = trigram_x_unrounded % 1f64;
-        let pupil_y_ratio = trigram_y_unrounded % 1f64;
 
-        // round the trigram coords to get finalized coords and convert to usize so we can use
-        // these numbers as rust indices, we're just gonna assume here that you won't have a
+        // round the trigram X coord and calculate the trigram Y coord and convert to usize so we can use
+        // these numbers as rust indices, these indices are where the trigram in question is
+        // located within the tiled message. We're just gonna assume here that you won't have a
         // message with more than your computer architecture's max bit width of trigrams...
         let trigram_x = trigram_x_unrounded.floor() as usize;
-        let trigram_y = trigram_y_unrounded.floor() as usize;
+        let trigram_y = (pupil_message_y as f64 / 14f64).floor() as usize;
 
         // if there is no message row vector for the row we are on, make one
         if trigrams.get(trigram_y).is_none() {
             trigrams.push(vec![]);
         }
 
-        // if there is no trigram info in the row and column slot we are on, make an empty vec
-        // where we will put our eye info
+        // if there is no index in which our trigram should be, push empty vectors into the row
+        // until the column we need has a place to put the trigram
         if trigrams[trigram_y].get(trigram_x).is_none() {
-            println!("current row length: {}", trigrams[trigram_y].len());
-            println!("trigram_x: {}", trigram_x);
-            // TODO: fill empty space between list length and current trigram_x as we don't knwo
-            // which trigram_x will be hit and they almost never will be hit in order from 0 to 25
-            trigrams[trigram_y].push(vec![]);
+            for _ in trigrams[trigram_y].len()..=trigram_x {
+                trigrams[trigram_y].push(vec!["".to_string(); 3]);
+            }
         }
 
         // check pixels surrounding the iris to see which eye state we are looking at
@@ -165,15 +162,24 @@ fn main() {
         }
 
         // figure out which eye in the trigram we are looking at
-        println!("pupil_x_ratio: {:?}, pupil_y_ratio: {:?}", pupil_x_ratio, pupil_y_ratio);
-
-        //temp
-        trigrams[trigram_y][trigram_x].push(direction.to_string());
-
-        // print that shit
-        //println!("{},{} {},{} {}", trigram_x, trigram_y, pixel.0 + 1, pixel.1 + 1, direction);
-        
+        // trigrams are indexed like so:
+        // {0 2| 4 |6 8}
+        // { 1 |3 5| 7 }
+        if pupil_x_ratio < 0.37 {
+            trigrams[trigram_y][trigram_x][0] = direction.to_string();
+        } else if pupil_x_ratio > 0.51 {
+            trigrams[trigram_y][trigram_x][2] = direction.to_string();
+        } else {
+            trigrams[trigram_y][trigram_x][1] = direction.to_string();
+        }
     }
+    
+    // serialize trigrams into json
+    let json_result = serde_json::to_string(&trigrams);
+    let json = match json_result {
+        Ok(data) => data,
+        Err(error) => panic!("{}", error)
+    };
 
-    //println!("image ColorType: {:?}", img.color());
+    println!("{}", json);
 }
