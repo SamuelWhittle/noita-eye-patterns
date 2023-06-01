@@ -171,9 +171,9 @@ fn main() -> Result<()> {
         }
 
         // figure out which eye in the trigram we are looking at
-        // trigrams are indexed like so:
-        // {0 2| 4 |6 8}
-        // { 1 |3 5| 7 }
+        // trigrams are indexed from left to right like so:
+        // 0 2| 1 |0 2
+        //  1 |0 2| 1 
         let mut pupil_index: usize = 1;
         if pupil_x_ratio < 0.37 {
             pupil_index = 0;
@@ -181,7 +181,7 @@ fn main() -> Result<()> {
             pupil_index = 2;
         }
 
-        trigrams[trigram_y][trigram_x][pupil_index] = Pupil{x: pupil.0, y: pupil.1, state: direction.to_string()};
+        trigrams[trigram_y][trigram_x][pupil_index] = Pupil{x: pupil_message_x, y: pupil_message_y, state: direction.to_string()};
     }
     
     // serialize trigrams into json
