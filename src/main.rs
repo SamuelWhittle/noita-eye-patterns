@@ -1,4 +1,6 @@
 use clap::Parser;
+use serde::{Serialize};
+use serde_json::Result;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -8,7 +10,14 @@ struct Args {
     path: String,
 }
 
-fn main() {
+#[derive(Serialize, Clone)]
+struct Pupil {
+    x: u32,
+    y: u32,
+    state: String,
+}
+
+fn main() -> Result<()> {
     // get the command line args
     let args = Args::parse();
 
@@ -33,7 +42,7 @@ fn main() {
     // has a first dimension length of the message height in trigrams (the messages from the game 
     // have a range from 4 to 6 rows of trigrams) , and a second dimensional length of the
     // message width in trigrams (the messages from the game always have 26 columns of trigrams).
-    let mut trigrams: Vec<Vec<Vec<String>>> = vec![];
+    let mut trigrams: Vec<Vec<Vec<Pupil>>> = vec![];
 
     // we will search the image for pixels that form the iris/pupil of the eyes
     // the iris/pupil in this case is a plus shape of black pixels
@@ -145,7 +154,7 @@ fn main() {
         // until the column we need has a place to put the trigram
         if trigrams[trigram_y].get(trigram_x).is_none() {
             for _ in trigrams[trigram_y].len()..=trigram_x {
-                trigrams[trigram_y].push(vec!["".to_string(); 3]);
+                trigrams[trigram_y].push(vec![Pupil{ x: 0, y: 0, state: "".to_string() }; 3]);
             }
         }
 
@@ -165,21 +174,20 @@ fn main() {
         // trigrams are indexed like so:
         // {0 2| 4 |6 8}
         // { 1 |3 5| 7 }
+        let mut pupil_index: usize = 1;
         if pupil_x_ratio < 0.37 {
-            trigrams[trigram_y][trigram_x][0] = direction.to_string();
+            pupil_index = 0;
         } else if pupil_x_ratio > 0.51 {
-            trigrams[trigram_y][trigram_x][2] = direction.to_string();
-        } else {
-            trigrams[trigram_y][trigram_x][1] = direction.to_string();
+            pupil_index = 2;
         }
+
+        trigrams[trigram_y][trigram_x][pupil_index] = Pupil{x: pupil.0, y: pupil.1, state: direction.to_string()};
     }
     
     // serialize trigrams into json
-    let json_result = serde_json::to_string(&trigrams);
-    let json = match json_result {
-        Ok(data) => data,
-        Err(error) => panic!("{}", error)
-    };
+    let json = serde_json::to_string(&trigrams)?;
 
     println!("{}", json);
+
+    Ok(())
 }
