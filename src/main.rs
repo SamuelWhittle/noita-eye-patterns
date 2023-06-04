@@ -1,4 +1,5 @@
 use clap::Parser;
+use image::{RgbaImage};
 use serde::{Serialize};
 use serde_json::Result;
 
@@ -17,32 +18,30 @@ struct Pupil {
     state: String,
 }
 
-fn main() -> Result<()> {
-    // get the command line args
-    let args = Args::parse();
+type PupilLocation = (u32, u32);
+type Trigrams = Vec<Vec<Vec<String>>>;
 
+fn get_img_buff(path: &String) -> RgbaImage {
     // get an image result
-    let img_result = image::open(args.path.clone());
+    let img_result = image::open(path);
 
     // if result Ok: convert data to rgba8 ImageBuffer
     let img_buff = match img_result {
         Ok(data) => data.to_rgba8(),
-        Err(error) => panic!("Problem opening path: {}. \nError: {:?}", args.path, error)
+        Err(error) => panic!("Problem opening path: {}. \nError: {:?}", path, error)
     };
+    
+    img_buff
+}
 
-    // number of pixels the message is offset from the left and top edge of the picture
+fn process_pixels(img_buff: &RgbaImage) -> Vec<PupilLocation> {
     let mut message_x_offset = 0;
     let mut message_y_offset = 0;
     // whether or not we have found the message offsets for the picture
     let mut message_offsets_found = false;
 
-    let mut pupil_locations = vec![];
-
-    // this will contain the final processed message. it will be a multi-dimensional vector that
-    // has a first dimension length of the message height in trigrams (the messages from the game 
-    // have a range from 4 to 6 rows of trigrams) , and a second dimensional length of the
-    // message width in trigrams (the messages from the game always have 26 columns of trigrams).
-    let mut trigrams: Vec<Vec<Vec<Pupil>>> = vec![];
+    // list of all pupil (x, y) coords in the image
+    let mut pupil_locations: Vec<PupilLocation> = vec![];
 
     // we will search the image for pixels that form the iris/pupil of the eyes
     // the iris/pupil in this case is a plus shape of black pixels
@@ -84,7 +83,6 @@ fn main() -> Result<()> {
             }
         }
 
-
         //println!("location: ({:?}, {:?}), color: {:?}", pixel.0, pixel.1, pixel.2);
         if pixel.0 > img_buff.dimensions().0 - 3 || pixel.1 > img_buff.dimensions().1 - 3 {
             continue;
@@ -121,14 +119,22 @@ fn main() -> Result<()> {
         pupil_locations.push((pupil_x, pupil_y));
     }
 
+    pupil_locations.iter().map(|coords| {
+        (coords.0 - message_x_offset, coords.1 - message_y_offset)
+    }).collect()
+}
+
+fn process_pupils(pupil_locations: Vec<PupilLocation>, img_buff: RgbaImage) -> Trigrams {
+    let mut trigrams: Trigrams = vec![];
+
     // go through all our pupil locations, at this point we should know what the message offsets
     // are so we can translate our picture specific coords into message specific coords
     for pupil in pupil_locations.iter() {
         // pupil coords relative to the top left of the message space. sub 3 from the 
         // pupil_message_x as the far left 3 pixels of each message is part of trigram x 
         // index -1 and needs to be ignored for proper tiling
-        let pupil_message_x = pupil.0 - message_x_offset - 3;
-        let pupil_message_y = pupil.1 - message_y_offset;
+        let pupil_message_x = pupil.0 - 3;
+        let pupil_message_y = pupil.1;
 
         // trigrams have a tileable size of 18 by 14 pixels, we divide our pixel X coord
         // by 18 to get an unrounded trigram X coord.
@@ -154,7 +160,7 @@ fn main() -> Result<()> {
         // until the column we need has a place to put the trigram
         if trigrams[trigram_y].get(trigram_x).is_none() {
             for _ in trigrams[trigram_y].len()..=trigram_x {
-                trigrams[trigram_y].push(vec![Pupil{ x: 0, y: 0, state: "".to_string() }; 3]);
+                trigrams[trigram_y].push(vec!["".to_string(); 3]);
             }
         }
 
@@ -181,8 +187,27 @@ fn main() -> Result<()> {
             pupil_index = 2;
         }
 
-        trigrams[trigram_y][trigram_x][pupil_index] = Pupil{x: pupil_message_x, y: pupil_message_y, state: direction.to_string()};
+        //trigrams[trigram_y][trigram_x][pupil_index] = Pupil{x: pupil_message_x, y: pupil_message_y, state: direction.to_string()};
+        trigrams[trigram_y][trigram_x][pupil_index] = direction.to_string();
     }
+
+    trigrams
+}
+
+fn main() -> Result<()> {
+    // get the command line args
+    let args = Args::parse();
+
+    let img_buff = get_img_buff(&args.path);
+
+    // number of pixels the message is offset from the left and top edge of the picture
+    let pupil_locations = process_pixels(&img_buff);
+
+    // this will contain the final processed message. it will be a multi-dimensional vector that
+    // has a first dimension length of the message height in trigrams (the messages from the game 
+    // have a range from 4 to 6 rows of trigrams) , and a second dimensional length of the
+    // message width in trigrams (the messages from the game always have 26 columns of trigrams).
+    let trigrams = process_pupils(pupil_locations, img_buff);
     
     // serialize trigrams into json
     let json = serde_json::to_string(&trigrams)?;
@@ -191,3 +216,4 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
