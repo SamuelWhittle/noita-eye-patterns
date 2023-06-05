@@ -3,12 +3,18 @@ use image::{RgbaImage};
 use serde::{Serialize};
 use serde_json::Result;
 
+pub mod decode_trigrams;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
     // path to file with eye patterns
-    #[arg(short, long)]
-    path: String,
+    #[arg(short = 'i', long)]
+    images: Vec<String>,
+    #[arg(short = 'p', long)]
+    print_trigrams: bool,
+    #[arg(short = 'd', long)]
+    decode_type: Option<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -19,7 +25,7 @@ struct Pupil {
 }
 
 type PupilLocation = (u32, u32);
-type Trigrams = Vec<Vec<Vec<String>>>;
+pub type Trigrams = Vec<Vec<Vec<String>>>;
 
 fn get_img_buff(path: &String) -> RgbaImage {
     // get an image result
@@ -198,21 +204,41 @@ fn main() -> Result<()> {
     // get the command line args
     let args = Args::parse();
 
-    let img_buff = get_img_buff(&args.path);
+    // does the user want to print the serialized message?
+    let mut print_serialized_trigrams = args.print_trigrams;
+    // does the user want to attempt a decode method?
+    let mut attempt_decode = false;
+    let mut decode_type = "".to_string();
 
-    // number of pixels the message is offset from the left and top edge of the picture
-    let pupil_locations = process_pixels(&img_buff);
+    // check if decode_type flag
+    if let Some(flag_data) = args.decode_type {
+        decode_type = flag_data;
+        attempt_decode = true;
+    }
 
-    // this will contain the final processed message. it will be a multi-dimensional vector that
-    // has a first dimension length of the message height in trigrams (the messages from the game 
-    // have a range from 4 to 6 rows of trigrams) , and a second dimensional length of the
-    // message width in trigrams (the messages from the game always have 26 columns of trigrams).
-    let trigrams = process_pupils(pupil_locations, img_buff);
-    
-    // serialize trigrams into json
-    let json = serde_json::to_string(&trigrams)?;
+    for (index, path) in args.images.clone().iter().enumerate() {
+        println!("running on path#{}: {}", index+1, path);
+        let img_buff = get_img_buff(&path);
 
-    println!("{}", json);
+        // number of pixels the message is offset from the left and top edge of the picture
+        let pupil_locations = process_pixels(&img_buff);
+
+        // this will contain the final processed message. it will be a multi-dimensional vector that
+        // has a first dimension length of the message height in trigrams (the messages from the game 
+        // have a range from 4 to 6 rows of trigrams) , and a second dimensional length of the
+        // message width in trigrams (the messages from the game always have 26 columns of trigrams).
+        let trigrams = process_pupils(pupil_locations, img_buff);
+
+        if print_serialized_trigrams {
+            // serialize trigrams into json
+            let json = serde_json::to_string(&trigrams)?;
+            println!("{}", json);
+        }
+
+        if attempt_decode {
+            decode_trigrams::decode_arg_match(decode_type.clone(), trigrams);
+        }
+    }
 
     Ok(())
 }
