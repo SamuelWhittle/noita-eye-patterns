@@ -205,7 +205,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     // does the user want to print the serialized message?
-    let mut print_serialized_trigrams = args.print_trigrams;
+    let print_serialized_trigrams = args.print_trigrams;
     // does the user want to attempt a decode method?
     let mut attempt_decode = false;
     let mut decode_type = "".to_string();
@@ -217,7 +217,7 @@ fn main() -> Result<()> {
     }
 
     for (index, path) in args.images.clone().iter().enumerate() {
-        println!("running on path#{}: {}", index+1, path);
+        println!("running on path#{}: <{}>", index+1, path);
         let img_buff = get_img_buff(&path);
 
         // number of pixels the message is offset from the left and top edge of the picture

@@ -1,8 +1,13 @@
 #!/bin/bash
 
 DECODE="unique_triangles"
+IMAGES=""
 
 for file in ./images/*
 do
-  cargo run -- -i ${file} -d ${DECODE} -p
+  IMAGES+=${file}
 done
+
+echo ${IMAGES}
+
+cargo run -- -i ${IMAGES} -d ${DECODE}
