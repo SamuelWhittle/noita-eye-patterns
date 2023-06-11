@@ -1,4 +1,4 @@
-use crate::Trigrams;
+use crate::TrigramMessage;
 use crate::decode_trigrams::trigram_state_to_decimal;
 
 fn sub_coords(coord1: Vec<i32>, coord2: Vec<i32>) -> Vec<i32> {
@@ -33,7 +33,8 @@ fn get_triangle_index_in(triangle: Vec<i32>, triangles: Vec<Vec<i32>>) -> Option
     })
 }
 
-pub fn get_unsorted_char_set() -> Vec<Vec<i32>> {
+// get a list of all possible triangles given all possible combinations of eye states
+fn get_all_triangles() -> Vec<Vec<i32>> {
     // basic positions of centered pupils with [0, 0] being the coords for the first pupil
     let base_eye_coords = vec![vec![0, 0], vec![6, 7], vec![12, 0]];
 
@@ -59,36 +60,48 @@ pub fn get_unsorted_char_set() -> Vec<Vec<i32>> {
     // use all possible triangle corner coords to generate an array of all possible triangles,
     // triangles will be defined via SSS, sides will be ordered from least to greatest within a
     // triangle array
-    let triangles: Vec<Vec<i32>> = triangle_coords.iter().map(|combination| {
+    triangle_coords.iter().map(|combination| {
         get_side_lengths(combination.clone())
-    }).collect();
+    }).collect()
+}
 
-    triangles.clone().iter().enumerate().filter(|(index, look_for_triangle)| {
-        let found_other_index: Option<usize> = get_triangle_index_in(look_for_triangle.to_vec(), triangles.clone());
+// given all possible triangles, filter out any duplicates to get a set of unique triangles
+fn get_unique_triangle_set(all_triangles: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    // loop over all possible triangles keeping the current triangle and our current index
+    // filter keeps any index that the closure returns true for.
+    all_triangles.clone().iter().enumerate().filter(|(index, look_for_triangle)| {
+        // use a custom search function to see if this triangle exists in the array of triangles
+        // by default this will immediately find the current triangle at our current index
+        let found_other_index: Option<usize> = get_triangle_index_in(look_for_triangle.to_vec(), all_triangles.clone());
 
+        // if we find an index, return a boolean state representing whether or not the two indexes
+        // are equal.
+        // if we do not find an index, return true
         match found_other_index {
             Some(other_index) => *index == other_index,
             None => true,
         }
+        // the filter will returns references to our data, dereference them so we can return the
+        // actual data
     }).map(|(_, val)| val.clone()).collect()
 }
 
-pub fn decipher_trigrams(trigrams: Trigrams, character_set: Vec<Vec<i32>>, iris_state_map: Vec<i32>) -> Vec<i32> {
-    //trigrams.iter().map(|trigram| {
-    //});
+pub fn decipher_trigrams(trigrams: TrigramMessage, unique_triangle_set: Vec<Vec<i32>>, all_triangles: Vec<Vec<i32>>) -> Vec<i32> {
+    trigrams.iter().map(|trigram| {
+    });
 
     vec![0]
 }
 
-pub fn decode(trigrams: Trigrams) {
-    println!("trigrams: {:?}", trigrams);
+pub fn decode(trigram_msg: TrigramMessage) {
+    println!("trigrams: {:?}", trigram_msg);
 
-    let unsorted_char_set: Vec<Vec<i32>> = get_unsorted_char_set();
-    println!("unsorted_char_set: {:?}", unsorted_char_set);
+    let all_triangles: Vec<Vec<i32>> = get_all_triangles();
 
-    let iris_state_map: Vec<i32> = vec![0, 1, 2, 3, 4];
+    let unique_triangle_set: Vec<Vec<i32>> = get_unique_triangle_set(all_triangles.clone());
+    println!("unique_triangle_set: {:?}", unique_triangle_set);
 
-    let deciphered_trigrams: Vec<i32> = decipher_trigrams(trigrams, unsorted_char_set, iris_state_map);
+    let deciphered_trigrams: Vec<i32> = decipher_trigrams(trigram_msg, unique_triangle_set, all_triangles.clone());
     println!("deciphered_trigrams: {:?}", deciphered_trigrams);
 
     println!("{:?}", trigram_state_to_decimal("clr") );

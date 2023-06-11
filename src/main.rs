@@ -25,7 +25,7 @@ struct Pupil {
 }
 
 type PupilLocation = (u32, u32);
-pub type Trigrams = Vec<Vec<Vec<String>>>;
+pub type TrigramMessage = Vec<Vec<String>>;
 
 fn get_img_buff(path: &String) -> RgbaImage {
     // get an image result
@@ -130,8 +130,8 @@ fn process_pixels(img_buff: &RgbaImage) -> Vec<PupilLocation> {
     }).collect()
 }
 
-fn process_pupils(pupil_locations: Vec<PupilLocation>, img_buff: RgbaImage) -> Trigrams {
-    let mut trigrams: Trigrams = vec![];
+fn process_pupils(pupil_locations: Vec<PupilLocation>, img_buff: RgbaImage) -> TrigramMessage {
+    let mut trigrams: Vec<Vec<Vec<String>>> = vec![];
 
     // go through all our pupil locations, at this point we should know what the message offsets
     // are so we can translate our picture specific coords into message specific coords
@@ -197,7 +197,13 @@ fn process_pupils(pupil_locations: Vec<PupilLocation>, img_buff: RgbaImage) -> T
         trigrams[trigram_y][trigram_x][pupil_index] = direction.to_string();
     }
 
-    trigrams
+    trigrams.iter().map(|message_row| {
+        message_row.clone().iter().map(|trigram| {
+            trigram.clone().iter().fold("".to_string(), |acc, eye_state| {
+                acc + eye_state
+            })
+        }).collect()
+    }).collect()
 }
 
 fn main() -> Result<()> {

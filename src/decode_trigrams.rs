@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::Chars;
 
-use crate::Trigrams;
+use crate::TrigramMessage;
 
 pub mod unique_triangles;
 
@@ -16,10 +16,10 @@ pub fn trigram_state_to_decimal(trigram_state: &str) -> usize {
     }
 }
 
-pub fn decode_arg_match(decode_type: String, trigrams: Trigrams) {
+pub fn decode_arg_match(decode_type: String, trigram_msg: TrigramMessage) {
     match decode_type.as_str() {
         "unique_triangles" => {
-            unique_triangles::decode(trigrams);
+            unique_triangles::decode(trigram_msg);
         }
         _ => {
             println!("unknown trigram decode method specified.")
