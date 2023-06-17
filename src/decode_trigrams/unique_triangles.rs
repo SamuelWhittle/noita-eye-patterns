@@ -1,5 +1,6 @@
-use crate::TrigramMessage;
+use crate::decode_trigrams::TrigramMessage;
 use crate::decode_trigrams::trigram_state_to_decimal;
+use crate::decode_trigrams::print_trigram_msg;
 
 fn sub_coords(coord1: Vec<i32>, coord2: Vec<i32>) -> Vec<i32> {
     coord1.iter().zip(coord2).map(|(val1, val2)| {
@@ -86,11 +87,18 @@ fn get_unique_triangle_set(all_triangles: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
     }).map(|(_, val)| val.clone()).collect()
 }
 
-pub fn decipher_trigrams(trigrams: TrigramMessage, unique_triangle_set: Vec<Vec<i32>>, all_triangles: Vec<Vec<i32>>) -> Vec<i32> {
-    trigrams.iter().map(|trigram| {
-    });
+pub fn decipher_trigrams(trigram_msg: TrigramMessage, unique_triangle_set: Vec<Vec<i32>>, all_triangles: Vec<Vec<i32>>) -> Vec<Vec<usize>> {
+    trigram_msg.iter().map(|trigram_row| {
+        trigram_row.iter().map(|trigram| {
+            let all_triangles_index: usize = trigram_state_to_decimal(trigram.clone());
+            let found_index: Option<usize> = get_triangle_index_in(all_triangles[all_triangles_index].clone(), unique_triangle_set.clone());
 
-    vec![0]
+            match found_index {
+                Some(index) => index,
+                None => panic!("tried to find a triangle in unique_triangles_set that did not exist"),
+            }
+        }).collect()
+    }).collect()
 }
 
 pub fn decode(trigram_msg: TrigramMessage) {
@@ -99,10 +107,12 @@ pub fn decode(trigram_msg: TrigramMessage) {
     let all_triangles: Vec<Vec<i32>> = get_all_triangles();
 
     let unique_triangle_set: Vec<Vec<i32>> = get_unique_triangle_set(all_triangles.clone());
-    println!("unique_triangle_set: {:?}", unique_triangle_set);
+    //println!("unique_triangle_set: {:?}", unique_triangle_set);
 
-    let deciphered_trigrams: Vec<i32> = decipher_trigrams(trigram_msg, unique_triangle_set, all_triangles.clone());
-    println!("deciphered_trigrams: {:?}", deciphered_trigrams);
+    let deciphered_trigrams: Vec<Vec<usize>> = decipher_trigrams(trigram_msg, unique_triangle_set, all_triangles.clone());
+    //println!("deciphered_trigrams: {:?}", deciphered_trigrams);
 
-    println!("{:?}", trigram_state_to_decimal("clr") );
+    print_trigram_msg(deciphered_trigrams);
+
+    //println!("{:?}", trigram_state_to_decimal("clr") );
 }
