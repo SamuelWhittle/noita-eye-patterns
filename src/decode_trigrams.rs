@@ -24,15 +24,23 @@ pub fn trigram_state_to_decimal(trigram_state: String) -> usize {
     }
 }
 
-pub fn print_trigram_msg<T: std::fmt::Display>(trigram_msg: Vec<Vec<T>>) {
-    print!("trigram_msg: \n");
+//print out a given message
+pub fn print_trigram_msg<T: std::fmt::Display>(trigram_msg: Vec<Vec<T>>, pretty: bool) {
+    //print!("trigram_msg: \n");
     for row in trigram_msg {
         for item in row {
-            print!("{:>2}, ", item.to_string())
+            if pretty {
+                print!("{:>2},", item.to_string())
+            } else {
+                print!("{},", item.to_string())
+            }
         }
-
-        print!("\n");
+        
+        if pretty {
+            print!("\n");
+        }
     }
+    print!("\n")
 }
 
 pub fn decode_arg_match(decode_type: String, trigram_msg: TrigramMessage) {

@@ -112,7 +112,7 @@ pub fn decode(trigram_msg: TrigramMessage) {
     let deciphered_trigrams: Vec<Vec<usize>> = decipher_trigrams(trigram_msg, unique_triangle_set, all_triangles.clone());
     //println!("deciphered_trigrams: {:?}", deciphered_trigrams);
 
-    print_trigram_msg(deciphered_trigrams);
+    print_trigram_msg(deciphered_trigrams, false);
 
     //println!("{:?}", trigram_state_to_decimal("clr") );
 }

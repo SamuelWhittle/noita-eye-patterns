@@ -1,6 +1,4 @@
 use clap::Parser;
-//use image::{RgbaImage};
-//use serde::{Serialize};
 use serde_json::Result;
 
 pub mod decode_trigrams;
@@ -39,8 +37,8 @@ fn main() -> Result<()> {
         attempt_decode = true;
     }
 
-    for (index, path) in args.images.clone().iter().enumerate() {
-        println!("\nrunning on path {}: <{}>", index+1, path);
+    for path in args.images.clone().iter() {
+        //println!("\nrunning on path {}: <{}>", index+1, path);
         let img_buff = get_img_buff(&path);
 
         // number of pixels the message is offset from the left and top edge of the picture
