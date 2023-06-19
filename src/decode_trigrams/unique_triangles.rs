@@ -102,7 +102,7 @@ pub fn decipher_trigrams(trigram_msg: TrigramMessage, unique_triangle_set: Vec<V
 }
 
 pub fn decode(trigram_msg: TrigramMessage) {
-    println!("trigrams: {:?}", trigram_msg);
+    //println!("trigrams: {:?}", trigram_msg);
 
     let all_triangles: Vec<Vec<i32>> = get_all_triangles();
 

@@ -5,9 +5,9 @@ IMAGES=""
 
 for file in ./images/*
 do
-  IMAGES+=${file}
+  IMAGES+="-i ${file} "
 done
 
-echo ${IMAGES}
+#echo ${IMAGES}
 
-cargo run -- -i ${IMAGES} -d ${DECODE}
+cargo run -- ${IMAGES} -d ${DECODE} > output.txt

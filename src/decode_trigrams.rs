@@ -27,10 +27,11 @@ pub fn trigram_state_to_decimal(trigram_state: String) -> usize {
 pub fn print_trigram_msg<T: std::fmt::Display>(trigram_msg: Vec<Vec<T>>) {
     print!("trigram_msg: \n");
     for row in trigram_msg {
-        print!("\n");
         for item in row {
             print!("{:>2}, ", item.to_string())
         }
+
+        print!("\n");
     }
 }
 
